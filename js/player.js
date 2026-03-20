@@ -46,7 +46,12 @@ export function initPlayer() {
     if (currentAudio) currentAudio.volume = e.target.value;
   });
 
-  EventBus.on('player:autoPlay', (val) => { autoPlayEnabled = val; });
+  // Auto-play toggle in player bar
+  const autoToggle = document.getElementById('playerAutoToggle');
+  autoToggle.addEventListener('click', () => {
+    autoPlayEnabled = !autoPlayEnabled;
+    autoToggle.classList.toggle('active', autoPlayEnabled);
+  });
 }
 
 export function playSingle(annotation, marker) {

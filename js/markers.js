@@ -156,18 +156,6 @@ function showPopover(marker, rootAnnotation, thread) {
   });
   pop.appendChild(list);
 
-  // Auto-play toggle
-  const autoRow = document.createElement('div');
-  autoRow.className = 'popover-auto';
-  autoRow.innerHTML = `
-    <label><input type="checkbox" ${state.autoPlay ? 'checked' : ''}> Lecture auto</label>
-  `;
-  autoRow.querySelector('input').addEventListener('change', e => {
-    state.autoPlay = e.target.checked;
-    EventBus.emit('player:autoPlay', e.target.checked);
-  });
-  pop.appendChild(autoRow);
-
   // Reply button
   const replyBtn = document.createElement('button');
   replyBtn.className = 'popover-reply';

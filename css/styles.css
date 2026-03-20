@@ -178,6 +178,10 @@ main{flex:1;display:flex;overflow:hidden}
 
 .player-time{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--text-dim);flex-shrink:0;display:flex;gap:4px}
 
+.player-auto-toggle{background:none;border:1px solid var(--border);color:var(--text-dim);cursor:pointer;padding:5px 7px;border-radius:6px;transition:all .15s;flex-shrink:0;display:flex;align-items:center}
+.player-auto-toggle:hover{border-color:var(--text-dim);color:var(--text)}
+.player-auto-toggle.active{border-color:var(--accent);color:var(--accent);background:rgba(240,93,62,.08)}
+
 .player-volume{display:flex;align-items:center;gap:6px;flex-shrink:0}
 .player-volume-icon{font-size:14px}
 .player-volume input[type=range]{width:60px;accent-color:var(--accent);height:3px}
