@@ -185,7 +185,10 @@ function makeItem(a, isReply) {
     input.focus();
     input.select();
 
+    let committed = false;
     const commit = () => {
+      if (committed) return;
+      committed = true;
       const val = input.value.trim();
       a.author = val;
       if (a.type === 'imported') a.moved = true;
@@ -194,7 +197,7 @@ function makeItem(a, isReply) {
     };
     input.addEventListener('keydown', ev => {
       if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
-      if (ev.key === 'Escape') { EventBus.emit('annotations:changed'); }
+      if (ev.key === 'Escape') { committed = true; EventBus.emit('annotations:changed'); }
     });
     input.addEventListener('blur', commit);
   });
