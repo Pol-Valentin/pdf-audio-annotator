@@ -3,6 +3,9 @@ import { state, getReplies, removeAnnotation } from './state.js';
 import { EventBus } from './event-bus.js';
 import { SPEAKER_SVG } from './utils.js';
 import { playAnnotation } from './player.js';
+import { highlightMarker, clearHighlight } from './markers.js';
+import { startRecording } from './recorder.js';
+import { ensureAuthor } from './author.js';
 
 const annotationList = document.getElementById('annotationList');
 const emptyState = document.getElementById('emptyState');
@@ -158,6 +161,7 @@ function makeItem(a, isReply) {
   const authorText = a.author || 'Anonyme';
   const lbl = a.label || `Page ${a.pageNum}`;
 
+  const rootId = a.parentId || a.id;
   el.innerHTML = `
     <div class="dot ${dc}">${SPEAKER_SVG}</div>
     <div class="info">
@@ -168,8 +172,15 @@ function makeItem(a, isReply) {
       </div>
       <div class="meta">p.${a.pageNum} · ${a.duration}s · ${kb} KB</div>
     </div>
+    ${!isReply ? '<button class="reply-btn" title="Répondre">🎙️</button>' : ''}
     <button class="del-btn" title="Supprimer">✕</button>
   `;
+
+  // Hover → highlight marker on canvas
+  el.addEventListener('mouseenter', () => {
+    if (a.pageNum === state.currentPage) highlightMarker(rootId);
+  });
+  el.addEventListener('mouseleave', () => clearHighlight());
 
   // Inline edit author on click
   const authorTag = el.querySelector('.author-tag');
@@ -211,6 +222,27 @@ function makeItem(a, isReply) {
   });
 
   el.querySelector('.dot').addEventListener('click', () => playAnnotation(a, null));
+
+  // Reply button (root annotations only)
+  const replyBtn = el.querySelector('.reply-btn');
+  if (replyBtn) {
+    replyBtn.addEventListener('click', async e => {
+      e.stopPropagation();
+      if (!(await ensureAuthor())) return;
+      // Navigate to the page if needed
+      if (state.currentPage !== a.pageNum) {
+        state.currentPage = a.pageNum;
+        EventBus.emit('page:changed');
+      }
+      startRecording({
+        pageIndex: a.pageIndex,
+        pageNum: a.pageNum,
+        pdfX: a.pdfX,
+        pdfY: a.pdfY,
+        parentId: a.id,
+      });
+    });
+  }
 
   el.querySelector('.del-btn').addEventListener('click', e => {
     e.stopPropagation();

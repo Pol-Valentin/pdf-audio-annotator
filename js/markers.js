@@ -190,3 +190,15 @@ function closePopover() {
     activePopover = null;
   }
 }
+
+export function highlightMarker(rootId) {
+  document.querySelectorAll('.audio-marker').forEach(m => {
+    m.classList.toggle('highlighted', m._rootId === rootId);
+  });
+}
+
+export function clearHighlight() {
+  document.querySelectorAll('.audio-marker.highlighted').forEach(m => {
+    m.classList.remove('highlighted');
+  });
+}
