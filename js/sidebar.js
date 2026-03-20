@@ -77,6 +77,8 @@ function makeItem(a, isReply) {
     const newName = prompt('Nom de l\'auteur :', a.author || '');
     if (newName !== null) {
       a.author = newName.trim();
+      if (a.type === 'imported') a.moved = true; // flag as modified for re-export
+      state.hasMovedAnnotations = true;
       EventBus.emit('annotations:changed');
     }
   });

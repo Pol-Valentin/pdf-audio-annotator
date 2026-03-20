@@ -180,8 +180,10 @@ main{flex:1;display:flex;overflow:hidden}
 .player-volume input[type=range]{width:60px;accent-color:var(--accent);height:3px}
 
 /* ── Toast ── */
-.toast{position:fixed;bottom:80px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 24px;background:var(--success);color:#000;font-size:13px;font-weight:600;border-radius:50px;box-shadow:0 8px 32px rgba(62,207,142,.3);transition:transform .3s cubic-bezier(.16,1,.3,1);z-index:200;white-space:nowrap}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(80px);padding:12px 24px;background:var(--success);color:#000;font-size:13px;font-weight:600;border-radius:50px;box-shadow:0 8px 32px rgba(62,207,142,.3);transition:all .3s cubic-bezier(.16,1,.3,1);z-index:200;white-space:nowrap;pointer-events:none}
 .toast.show{transform:translateX(-50%) translateY(0)}
+.player-bar.visible ~ .toast{bottom:60px}
+.player-bar.visible ~ .toast.show{bottom:60px}
 
 .info-bar{padding:8px 20px;background:rgba(108,140,255,.08);border-bottom:1px solid rgba(108,140,255,.15);font-size:12px;color:var(--imported);text-align:center;flex-shrink:0;display:none}
 .info-bar strong{font-weight:700}

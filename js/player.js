@@ -23,6 +23,13 @@ let currentIndex = 0;
 let autoPlayEnabled = true;
 let updateInterval = null;
 
+const ICON_PLAY = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>';
+const ICON_PAUSE = '<svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>';
+
+function setPlayPauseIcon(isPlaying) {
+  playerPlayPause.innerHTML = isPlaying ? ICON_PAUSE : ICON_PLAY;
+}
+
 export function initPlayer() {
   playerPrev.addEventListener('click', playPrev);
   playerNext.addEventListener('click', playNext);
@@ -92,7 +99,7 @@ function playAtIndex(index, marker) {
   } else {
     playerPosition.style.display = 'none';
   }
-  playerPlayPause.textContent = '⏸';
+  setPlayPauseIcon(true);
   playerTimeCurrent.textContent = '00:00';
   playerTimeTotal.textContent = formatTime(a.duration);
   playerProgressFill.style.width = '0%';
@@ -107,7 +114,7 @@ function playAtIndex(index, marker) {
     if (autoPlayEnabled && currentIndex < currentPlaylist.length - 1) {
       playAtIndex(currentIndex + 1, null);
     } else {
-      playerPlayPause.textContent = '▶';
+      setPlayPauseIcon(false);
       if (currentUrl) URL.revokeObjectURL(currentUrl);
       currentAudio = null;
       currentUrl = null;
@@ -136,11 +143,11 @@ function togglePlayPause() {
   }
   if (currentAudio.paused) {
     currentAudio.play();
-    playerPlayPause.textContent = '⏸';
+    setPlayPauseIcon(true);
     EventBus.emit('player:playing', currentPlaylist[currentIndex]);
   } else {
     currentAudio.pause();
-    playerPlayPause.textContent = '▶';
+    setPlayPauseIcon(false);
     EventBus.emit('player:paused', currentPlaylist[currentIndex]);
   }
 }
