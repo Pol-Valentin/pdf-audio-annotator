@@ -40,6 +40,14 @@ initSidebar();
 initExporter();
 initTheme();
 
+// ── Open new file ──
+document.getElementById('openNewFile').addEventListener('click', () => {
+  const rec = state.annotations.filter(a => a.type === 'recorded');
+  const hasChanges = rec.length > 0 || state.deletedImportedIndices.length > 0 || state.hasMovedAnnotations;
+  if (hasChanges && !confirm('Tu as des modifications non exportées. Continuer ?')) return;
+  fileInput.click();
+});
+
 // ── Drag & drop ──
 dropArea.addEventListener('click', () => fileInput.click());
 fileInput.addEventListener('change', e => { if (e.target.files[0]) handleLoadPDF(e.target.files[0]); });

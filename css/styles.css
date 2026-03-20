@@ -695,6 +695,7 @@ main { flex: 1; display: flex; overflow: hidden; }
   .author-display .edit-icon { display: none; }
   .page-nav button { width: 26px; height: 26px; font-size: 13px; border-radius: 4px; }
   .page-nav { font-size: 11px; }
+  .btn-label-desktop { display: none; }
 
   .viewer { padding: 8px; }
   .dropzone { padding: 20px; }
