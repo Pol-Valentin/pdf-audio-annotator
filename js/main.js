@@ -141,3 +141,12 @@ function showToast(msg) {
 
 // ── Resize ──
 window.addEventListener('resize', () => { if (state.pdfJsDoc) updateMarkers(); });
+
+// ── Warn before leaving with unsaved changes ──
+window.addEventListener('beforeunload', e => {
+  const rec = state.annotations.filter(a => a.type === 'recorded');
+  const hasChanges = rec.length > 0 || state.deletedImportedIndices.length > 0 || state.hasMovedAnnotations;
+  if (hasChanges) {
+    e.preventDefault();
+  }
+});

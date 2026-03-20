@@ -104,6 +104,7 @@ async function processAudio(blob) {
       author: getAuthor(),
       parentId: click.parentId || null,
       label: '',
+      createdAt: new Date(),
     });
     EventBus.emit('toast', `Annotation ajoutee (${duration}s)`);
   } catch (err) {

@@ -121,6 +121,14 @@ function writeNewAnnotation(doc, ctx, a, parentRef) {
   adm.set(PDFName.of('Contents'), PDFString.of(a.label || `Note audio - ${a.duration}s`));
   adm.set(PDFName.of('F'), PDFNumber.of(4));
 
+  // Write date /M in PDF date format
+  if (a.createdAt) {
+    const d = a.createdAt;
+    const pad = n => String(n).padStart(2, '0');
+    const pdfDate = `D:${d.getFullYear()}${pad(d.getMonth() + 1)}${pad(d.getDate())}${pad(d.getHours())}${pad(d.getMinutes())}${pad(d.getSeconds())}`;
+    adm.set(PDFName.of('M'), PDFString.of(pdfDate));
+  }
+
   if (parentRef) {
     adm.set(PDFName.of('IRT'), parentRef);
     adm.set(PDFName.of('RT'), PDFName.of('R'));

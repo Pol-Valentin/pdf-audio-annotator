@@ -170,9 +170,9 @@ function makeItem(a, isReply) {
         ${isReply ? '<span class="reply-icon">↩</span>' : ''}
         ${lbl}
       </div>
-      <div class="meta">p.${a.pageNum} · ${a.duration}s · ${kb} KB</div>
+      <div class="meta">p.${a.pageNum} · ${a.duration}s${a.createdAt ? ' · ' + formatDate(a.createdAt) : ''}</div>
     </div>
-    ${!isReply ? '<button class="reply-btn" title="Répondre">🎙️</button>' : ''}
+    <button class="reply-btn" title="Répondre">🎙️</button>
     <button class="del-btn" title="Supprimer">✕</button>
   `;
 
@@ -223,26 +223,24 @@ function makeItem(a, isReply) {
 
   el.querySelector('.dot').addEventListener('click', () => playAnnotation(a, null));
 
-  // Reply button (root annotations only)
+  // Reply button — always reply to root
   const replyBtn = el.querySelector('.reply-btn');
-  if (replyBtn) {
-    replyBtn.addEventListener('click', async e => {
-      e.stopPropagation();
-      if (!(await ensureAuthor())) return;
-      // Navigate to the page if needed
-      if (state.currentPage !== a.pageNum) {
-        state.currentPage = a.pageNum;
-        EventBus.emit('page:changed');
-      }
-      startRecording({
-        pageIndex: a.pageIndex,
-        pageNum: a.pageNum,
-        pdfX: a.pdfX,
-        pdfY: a.pdfY,
-        parentId: a.id,
-      });
+  replyBtn.addEventListener('click', async e => {
+    e.stopPropagation();
+    if (!(await ensureAuthor())) return;
+    const root = state.annotations.find(x => x.id === rootId) || a;
+    if (state.currentPage !== root.pageNum) {
+      state.currentPage = root.pageNum;
+      EventBus.emit('page:changed');
+    }
+    startRecording({
+      pageIndex: root.pageIndex,
+      pageNum: root.pageNum,
+      pdfX: root.pdfX,
+      pdfY: root.pdfY,
+      parentId: rootId,
     });
-  }
+  });
 
   el.querySelector('.del-btn').addEventListener('click', e => {
     e.stopPropagation();
@@ -250,6 +248,19 @@ function makeItem(a, isReply) {
   });
 
   return el;
+}
+
+function formatDate(d) {
+  if (!d) return '';
+  const now = new Date();
+  const pad = n => String(n).padStart(2, '0');
+  const time = `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // Same day → just time
+  if (d.toDateString() === now.toDateString()) return time;
+  // Same year → day/month + time
+  const date = `${pad(d.getDate())}/${pad(d.getMonth() + 1)}`;
+  if (d.getFullYear() === now.getFullYear()) return `${date} ${time}`;
+  return `${date}/${d.getFullYear()} ${time}`;
 }
 
 function updateExportBtn() {

@@ -89,6 +89,19 @@ async function extractSoundAnnotations() {
           label = s.replace(/^\(|\)$/g, '');
         }
 
+        // Read date from /M (modification date)
+        let createdAt = null;
+        const mObj = annot.get(PDFName.of('M'));
+        if (mObj) {
+          const ms = typeof mObj.value === 'function' ? mObj.value() : String(mObj);
+          const dateStr = ms.replace(/^\(|\)$/g, '');
+          // PDF date format: D:YYYYMMDDHHmmSS or variants
+          const match = dateStr.match(/D:(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})?/);
+          if (match) {
+            createdAt = new Date(+match[1], +match[2] - 1, +match[3], +match[4], +match[5], +(match[6] || 0));
+          }
+        }
+
         const id = Date.now() + Math.random();
         const annotation = {
           id, type: 'imported',
@@ -96,7 +109,7 @@ async function extractSoundAnnotations() {
           pcmData: pcm, sampleRate, channels, bits, duration: dur,
           audioBlob: wavBlob, label, author,
           origAnnotIndex: ai, moved: false,
-          parentId: null,
+          parentId: null, createdAt,
         };
 
         state.annotations.push(annotation);
