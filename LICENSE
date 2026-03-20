@@ -1,0 +1,32 @@
+Creative Commons Attribution-NonCommercial 4.0 International (CC BY-NC 4.0)
+
+Copyright (c) 2026 Pol-Valentin
+
+You are free to:
+
+  - Share — copy and redistribute the material in any medium or format
+  - Adapt — remix, transform, and build upon the material
+
+Under the following terms:
+
+  - Attribution — You must give appropriate credit, provide a link to
+    the license, and indicate if changes were made.
+  - NonCommercial — You may not use the material for commercial purposes.
+
+No additional restrictions — You may not apply legal terms or technological
+measures that legally restrict others from doing anything the license permits.
+
+Full license text: https://creativecommons.org/licenses/by-nc/4.0/legalcode
+
+---
+
+This project uses the following third-party libraries:
+
+- pdf.js (Mozilla) — Apache License 2.0
+  https://github.com/nicolo-ribaudo/pdfjs-dist-no-worker/blob/master/LICENSE
+
+- pdf-lib (Hopding) — MIT License
+  https://github.com/Hopding/pdf-lib/blob/master/LICENSE.md
+
+- pako (nodeca) — MIT and Zlib License
+  https://github.com/nodeca/pako/blob/master/LICENSE

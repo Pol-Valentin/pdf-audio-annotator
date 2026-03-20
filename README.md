@@ -62,4 +62,12 @@ js/
 
 ## License
 
-MIT
+[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/) — Free to use, share, and adapt for **non-commercial** purposes with attribution.
+
+### Third-party licenses
+
+| Library | License |
+|---------|---------|
+| [pdf.js](https://mozilla.github.io/pdf.js/) | Apache 2.0 |
+| [pdf-lib](https://pdf-lib.js.org/) | MIT |
+| [pako](https://github.com/nodeca/pako) | MIT / Zlib |
