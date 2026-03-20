@@ -143,10 +143,52 @@ function showToast(msg) {
 window.addEventListener('resize', () => { if (state.pdfJsDoc) updateMarkers(); });
 
 // ── Warn before leaving with unsaved changes ──
-window.addEventListener('beforeunload', e => {
+function hasUnsavedChanges() {
   const rec = state.annotations.filter(a => a.type === 'recorded');
-  const hasChanges = rec.length > 0 || state.deletedImportedIndices.length > 0 || state.hasMovedAnnotations;
-  if (hasChanges) {
+  return rec.length > 0 || state.deletedImportedIndices.length > 0 || state.hasMovedAnnotations;
+}
+
+// Native fallback (can't be customized but catches tab close / reload)
+window.addEventListener('beforeunload', e => {
+  if (hasUnsavedChanges() && !state._allowLeave) {
     e.preventDefault();
   }
 });
+
+// Custom modal for keyboard shortcuts & navigation
+{
+  const leaveModal = document.getElementById('leaveModal');
+  const closeBtn = document.getElementById('leaveModalClose');
+  const discardBtn = document.getElementById('leaveModalDiscard');
+  const exportBtn = document.getElementById('leaveModalExport');
+
+  function showLeaveModal() {
+    if (!hasUnsavedChanges()) return false;
+    leaveModal.classList.add('visible');
+    return true;
+  }
+
+  function hideLeaveModal() {
+    leaveModal.classList.remove('visible');
+  }
+
+  closeBtn.addEventListener('click', hideLeaveModal);
+  leaveModal.addEventListener('click', e => { if (e.target === leaveModal) hideLeaveModal(); });
+
+  discardBtn.addEventListener('click', () => {
+    state._allowLeave = true;
+    hideLeaveModal();
+    window.close(); // works if opened by script, otherwise no-op
+  });
+
+  exportBtn.addEventListener('click', async () => {
+    hideLeaveModal();
+    // Trigger export
+    document.getElementById('downloadBtn').click();
+    // Small delay for download to start, then allow leave
+    setTimeout(() => { state._allowLeave = true; }, 500);
+  });
+
+  // Expose for potential use
+  EventBus.on('app:tryLeave', showLeaveModal);
+}

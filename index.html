@@ -181,6 +181,25 @@
   </div>
 </div>
 
+<!-- Leave confirmation modal -->
+<div class="modal-overlay" id="leaveModal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title">Modifications non exportées</span>
+      <button class="modal-close" id="leaveModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <p style="font-size:13px;line-height:1.6;color:var(--text-dim)">
+        Tu as des modifications non sauvegardées. Que veux-tu faire ?
+      </p>
+    </div>
+    <div class="modal-footer" style="flex-wrap:wrap;gap:8px">
+      <button class="btn" id="leaveModalDiscard">Quitter sans exporter</button>
+      <button class="btn btn-accent" id="leaveModalExport">Exporter puis quitter</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module" src="js/main.js"></script>
