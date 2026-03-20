@@ -119,14 +119,7 @@ function setupDragAndClick(m, a) {
 
 function handleMarkerClick(marker, rootAnnotation) {
   const thread = getThread(rootAnnotation.id);
-
-  if (thread.length === 1) {
-    // Single audio — play directly
-    playAnnotation(rootAnnotation, marker);
-    return;
-  }
-
-  // Multi-audio — show popover
+  // Always show popover (play + reply)
   showPopover(marker, rootAnnotation, thread);
 }
 
@@ -140,7 +133,7 @@ function showPopover(marker, rootAnnotation, thread) {
   // Header
   const header = document.createElement('div');
   header.className = 'popover-header';
-  header.innerHTML = `<span>${thread.length} audios</span>`;
+  header.innerHTML = `<span>${thread.length} audio${thread.length > 1 ? 's' : ''}</span>`;
   pop.appendChild(header);
 
   // Audio list
