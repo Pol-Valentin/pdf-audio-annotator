@@ -8,6 +8,7 @@ import { initPlayer } from './player.js';
 import { initMarkers, updateMarkers } from './markers.js';
 import { initSidebar } from './sidebar.js';
 import { initExporter } from './exporter.js';
+import { initTheme } from './theme.js';
 
 // DOM refs
 const dropzone = document.getElementById('dropzone');
@@ -37,6 +38,7 @@ initPlayer();
 initMarkers();
 initSidebar();
 initExporter();
+initTheme();
 
 // ── Drag & drop ──
 dropArea.addEventListener('click', () => fileInput.click());
