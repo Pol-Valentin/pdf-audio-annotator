@@ -20,7 +20,7 @@ async function buildAndDownload() {
     const doc = await PDFDocument.load(state.pdfBytes, { ignoreEncryption: true });
     const ctx = doc.context;
 
-    // 1. Remove ONLY deleted annotations (not moved ones!)
+    // 1. Remove ONLY deleted annotations
     const toRemove = {};
     state.deletedImportedIndices.forEach(d => {
       (toRemove[d.pageIndex] ||= new Set()).add(d.annotIndex);
@@ -36,7 +36,33 @@ async function buildAndDownload() {
       for (const idx of indices) { if (idx < arr.size()) arr.remove(idx); }
     }
 
-    // 2. Patch moved imported annotations IN PLACE (no stream duplication)
+    // 2. Build a ref map for ALL existing imported annotations (for IRT linking)
+    //    so recorded replies can point to their imported parents
+    const refMap = new Map(); // annotation id -> PDFRef
+
+    for (const a of state.annotations.filter(x => x.type === 'imported' && !x.moved)) {
+      // Find the PDF ref of this annotation in the (post-deletion) Annots array
+      const page = doc.getPage(a.pageIndex);
+      const annotsRaw = page.node.get(PDFName.of('Annots'));
+      if (!annotsRaw) continue;
+      const arr = resolve(ctx, annotsRaw);
+      if (!(arr instanceof PDFArray)) continue;
+
+      const deletedOnPage = toRemove[a.pageIndex];
+      let adjustedIndex = a.origAnnotIndex;
+      if (deletedOnPage) {
+        adjustedIndex -= [...deletedOnPage].filter(i => i < a.origAnnotIndex).length;
+      }
+
+      if (adjustedIndex >= 0 && adjustedIndex < arr.size()) {
+        const ref = arr.get(adjustedIndex);
+        if (ref instanceof PDFRef) {
+          refMap.set(a.id, ref);
+        }
+      }
+    }
+
+    // 3. Patch moved imported annotations IN PLACE
     for (const a of movedImported) {
       const page = doc.getPage(a.pageIndex);
       const annotsRaw = page.node.get(PDFName.of('Annots'));
@@ -44,28 +70,28 @@ async function buildAndDownload() {
       const arr = resolve(ctx, annotsRaw);
       if (!(arr instanceof PDFArray)) continue;
 
-      // Find the annotation dict — account for deleted indices shifting positions
-      // We need to find the Sound annotation at the adjusted index
       const deletedOnPage = toRemove[a.pageIndex];
       let adjustedIndex = a.origAnnotIndex;
       if (deletedOnPage) {
-        // Count how many deleted indices are before this one
-        const deletedBefore = [...deletedOnPage].filter(i => i < a.origAnnotIndex).length;
-        adjustedIndex -= deletedBefore;
+        adjustedIndex -= [...deletedOnPage].filter(i => i < a.origAnnotIndex).length;
       }
 
       if (adjustedIndex < 0 || adjustedIndex >= arr.size()) continue;
       const annot = resolve(ctx, arr.get(adjustedIndex));
       if (!(annot instanceof PDFDict)) continue;
 
-      // Patch fields in place — no new stream needed
       annot.set(PDFName.of('T'), PDFString.of(a.author || 'Anonyme'));
       annot.set(PDFName.of('Contents'), PDFString.of(a.label || `Note audio - ${a.duration}s`));
       annot.set(PDFName.of('Rect'), ctx.obj([a.pdfX, a.pdfY, a.pdfX + 24, a.pdfY + 24]));
+
+      // Also store ref for IRT linking
+      const ref = arr.get(adjustedIndex);
+      if (ref instanceof PDFRef) {
+        refMap.set(a.id, ref);
+      }
     }
 
-    // 3. Add new recorded annotations
-    const refMap = new Map();
+    // 4. Add new recorded annotations (roots first, then replies)
     const roots = rec.filter(a => !a.parentId);
     const replies = rec.filter(a => a.parentId);
 
@@ -75,8 +101,8 @@ async function buildAndDownload() {
     }
 
     for (const a of replies) {
-      const parentRef = refMap.get(a.parentId);
-      writeNewAnnotation(doc, ctx, a, parentRef || null);
+      const parentRef = refMap.get(a.parentId) || null;
+      writeNewAnnotation(doc, ctx, a, parentRef);
     }
 
     const bytes = await doc.save({ useObjectStreams: false });
@@ -85,6 +111,16 @@ async function buildAndDownload() {
     link.href = url; link.download = 'annotated_audio.pdf';
     document.body.appendChild(link); link.click(); document.body.removeChild(link);
     URL.revokeObjectURL(url);
+
+    // Reset dirty flags after successful export
+    state.annotations.forEach(a => {
+      if (a.type === 'recorded') a.type = 'imported'; // now persisted
+      if (a.moved) a.moved = false;
+    });
+    state.deletedImportedIndices = [];
+    state.hasMovedAnnotations = false;
+    state.pdfBytes = new Uint8Array(bytes); // update reference bytes
+    EventBus.emit('annotations:changed');
 
     const parts = [];
     if (rec.length) parts.push(`${rec.length} ajoutée(s)`);
@@ -121,7 +157,7 @@ function writeNewAnnotation(doc, ctx, a, parentRef) {
   adm.set(PDFName.of('Contents'), PDFString.of(a.label || `Note audio - ${a.duration}s`));
   adm.set(PDFName.of('F'), PDFNumber.of(4));
 
-  // Write date /M in PDF date format
+  // Write date /M
   if (a.createdAt) {
     const d = a.createdAt;
     const pad = n => String(n).padStart(2, '0');
@@ -129,6 +165,7 @@ function writeNewAnnotation(doc, ctx, a, parentRef) {
     adm.set(PDFName.of('M'), PDFString.of(pdfDate));
   }
 
+  // IRT for replies
   if (parentRef) {
     adm.set(PDFName.of('IRT'), parentRef);
     adm.set(PDFName.of('RT'), PDFName.of('R'));
