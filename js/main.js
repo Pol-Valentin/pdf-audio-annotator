@@ -192,3 +192,59 @@ window.addEventListener('beforeunload', e => {
   // Expose for potential use
   EventBus.on('app:tryLeave', showLeaveModal);
 }
+
+// ── Mobile sidebar toggle ──
+{
+  const sidebarToggle = document.getElementById('sidebarToggle');
+  const sidebarOverlay = document.getElementById('sidebarOverlay');
+  const toggleBadge = document.getElementById('toggleBadge');
+
+  function isMobile() { return window.innerWidth <= 768; }
+
+  function openSidebar() {
+    sidebar.classList.add('open');
+    sidebarOverlay.classList.add('visible');
+  }
+
+  function closeSidebar() {
+    sidebar.classList.remove('open');
+    sidebarOverlay.classList.remove('visible');
+  }
+
+  sidebarToggle.addEventListener('click', () => {
+    sidebar.classList.contains('open') ? closeSidebar() : openSidebar();
+  });
+
+  sidebarOverlay.addEventListener('click', closeSidebar);
+
+  // Show/hide toggle button based on viewport
+  function updateToggleVisibility() {
+    if (isMobile() && headerControls.style.display !== 'none') {
+      sidebarToggle.style.display = '';
+      // On mobile, hide sidebar from flow (CSS handles positioning)
+      if (!sidebar.classList.contains('open')) {
+        sidebar.style.display = 'flex';
+      }
+    } else {
+      sidebarToggle.style.display = 'none';
+      sidebar.classList.remove('open');
+      sidebarOverlay.classList.remove('visible');
+    }
+  }
+
+  window.addEventListener('resize', updateToggleVisibility);
+
+  // Update badge count when annotations change
+  EventBus.on('annotations:changed', () => {
+    const count = state.annotations.length;
+    if (count > 0) {
+      toggleBadge.textContent = count;
+      toggleBadge.style.display = '';
+    } else {
+      toggleBadge.style.display = 'none';
+    }
+  });
+
+  // Also update toggle visibility when PDF loads
+  EventBus.on('pdf:loaded', updateToggleVisibility);
+}

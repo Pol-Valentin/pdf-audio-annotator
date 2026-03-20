@@ -26,7 +26,7 @@
       <line x1="6" y1="12" x2="12" y2="12" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round"/>
       <line x1="6" y1="16" x2="10" y2="16" stroke="var(--text-dim)" stroke-width="1.5" stroke-linecap="round"/>
     </svg>
-    PDF Audio Annotator
+    <span class="logo-text">PDF Audio Annotator</span>
   </div>
   <div class="header-controls" id="headerControls" style="display:none;">
     <div class="page-nav">
@@ -46,6 +46,10 @@
     <button class="btn btn-accent" id="downloadBtn" disabled>
       <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
       Exporter
+    </button>
+    <button class="btn sidebar-toggle" id="sidebarToggle" style="display:none;" title="Annotations">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+      <span class="toggle-badge" id="toggleBadge" style="display:none">0</span>
     </button>
   </div>
 </header>
@@ -200,6 +204,7 @@
   </div>
 </div>
 
+<div class="sidebar-overlay" id="sidebarOverlay"></div>
 <div class="toast" id="toast"></div>
 
 <script type="module" src="js/main.js"></script>
