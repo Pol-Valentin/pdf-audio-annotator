@@ -11,13 +11,15 @@ const pdfCanvas = document.getElementById('pdfCanvas');
 const DRAG_THRESHOLD = 5;
 
 let activePopover = null;
+let popoverJustOpened = false; // flag to prevent immediate close
 
 export function initMarkers() {
-  // Close popover on outside click
-  document.addEventListener('click', e => {
-    if (activePopover && !activePopover.contains(e.target)) {
+  // Close popover on outside click — skip if just opened
+  document.addEventListener('mousedown', e => {
+    if (activePopover && !popoverJustOpened && !activePopover.contains(e.target)) {
       closePopover();
     }
+    popoverJustOpened = false;
   });
 
   EventBus.on('player:playing', (a) => {
@@ -40,7 +42,6 @@ export function updateMarkers() {
   closePopover();
   const cr = pdfCanvas.getBoundingClientRect();
 
-  // Only show root annotations (not replies) as markers
   const roots = getRootAnnotations(state.currentPage);
 
   roots.forEach(a => {
@@ -56,7 +57,6 @@ export function updateMarkers() {
     m.style.top = dy + 'px';
     m.innerHTML = SPEAKER_SVG;
 
-    // Badge for multi-audio
     if (threadCount > 1) {
       const badge = document.createElement('span');
       badge.className = 'marker-badge';
@@ -84,9 +84,9 @@ function setupDragAndClick(m, a) {
     isDragging = true; didDrag = false;
     m.style.zIndex = '20';
 
-    const onMove = e => {
+    const onMove = ev => {
       if (!isDragging) return;
-      const ddx = e.clientX - downX, ddy = e.clientY - downY;
+      const ddx = ev.clientX - downX, ddy = ev.clientY - downY;
       if (Math.abs(ddx) > DRAG_THRESHOLD || Math.abs(ddy) > DRAG_THRESHOLD) didDrag = true;
       if (didDrag) {
         m.style.left = (origLeft + ddx) + 'px';
@@ -108,26 +108,27 @@ function setupDragAndClick(m, a) {
         state.hasMovedAnnotations = true;
         EventBus.emit('annotations:changed');
       } else {
-        handleMarkerClick(m, a);
+        showPopover(m, a, getThread(a.id));
       }
     };
 
     window.addEventListener('mousemove', onMove);
     window.addEventListener('mouseup', onUp, { once: true });
   });
-}
 
-function handleMarkerClick(marker, rootAnnotation) {
-  const thread = getThread(rootAnnotation.id);
-  // Always show popover (play + reply)
-  showPopover(marker, rootAnnotation, thread);
+  // Block click event from reaching document (would close the popover)
+  m.addEventListener('click', e => {
+    e.stopPropagation();
+  });
 }
 
 function showPopover(marker, rootAnnotation, thread) {
   closePopover();
+  popoverJustOpened = true;
 
   const pop = document.createElement('div');
   pop.className = 'marker-popover';
+  pop.addEventListener('mousedown', e => e.stopPropagation());
   pop.addEventListener('click', e => e.stopPropagation());
 
   // Header
@@ -159,7 +160,7 @@ function showPopover(marker, rootAnnotation, thread) {
   const autoRow = document.createElement('div');
   autoRow.className = 'popover-auto';
   autoRow.innerHTML = `
-    <label><input type="checkbox" id="popoverAutoPlay" ${state.autoPlay ? 'checked' : ''}> Lecture auto</label>
+    <label><input type="checkbox" ${state.autoPlay ? 'checked' : ''}> Lecture auto</label>
   `;
   autoRow.querySelector('input').addEventListener('change', e => {
     state.autoPlay = e.target.checked;
@@ -170,12 +171,11 @@ function showPopover(marker, rootAnnotation, thread) {
   // Reply button
   const replyBtn = document.createElement('button');
   replyBtn.className = 'popover-reply';
-  replyBtn.innerHTML = '🎙️ Repondre';
+  replyBtn.textContent = '🎙️ Répondre';
   replyBtn.addEventListener('click', e => {
     e.stopPropagation();
     closePopover();
     if (!ensureAuthor()) return;
-    // Start recording as reply to this root
     startRecording({
       pageIndex: rootAnnotation.pageIndex,
       pageNum: rootAnnotation.pageNum,
@@ -186,7 +186,7 @@ function showPopover(marker, rootAnnotation, thread) {
   });
   pop.appendChild(replyBtn);
 
-  // Position popover
+  // Position popover below marker
   const mRect = marker.getBoundingClientRect();
   const wrapRect = canvasWrapper.getBoundingClientRect();
   pop.style.left = (mRect.left - wrapRect.left + mRect.width / 2) + 'px';
