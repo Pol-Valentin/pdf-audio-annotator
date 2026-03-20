@@ -109,9 +109,9 @@ toggleAnnotateBtn.addEventListener('click', () => {
   EventBus.emit('annotateMode:changed', state.annotateMode);
 });
 
-pdfCanvas.addEventListener('click', e => {
+pdfCanvas.addEventListener('click', async e => {
   if (!state.annotateMode || state.isRecording) return;
-  if (!ensureAuthor()) return;
+  if (!(await ensureAuthor())) return;
   const rect = pdfCanvas.getBoundingClientRect();
   const cx = (e.clientX - rect.left) * (pdfCanvas.width / rect.width);
   const cy = (e.clientY - rect.top) * (pdfCanvas.height / rect.height);

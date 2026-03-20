@@ -172,10 +172,10 @@ function showPopover(marker, rootAnnotation, thread) {
   const replyBtn = document.createElement('button');
   replyBtn.className = 'popover-reply';
   replyBtn.textContent = '🎙️ Répondre';
-  replyBtn.addEventListener('click', e => {
+  replyBtn.addEventListener('click', async e => {
     e.stopPropagation();
     closePopover();
-    if (!ensureAuthor()) return;
+    if (!(await ensureAuthor())) return;
     startRecording({
       pageIndex: rootAnnotation.pageIndex,
       pageNum: rootAnnotation.pageNum,

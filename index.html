@@ -158,6 +158,26 @@
   </div>
 </div>
 
+<!-- Generic input modal -->
+<div class="modal-overlay" id="inputModal">
+  <div class="modal modal-sm">
+    <div class="modal-header">
+      <span class="modal-title" id="inputModalTitle">—</span>
+      <button class="modal-close" id="inputModalClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label" id="inputModalLabel">—</label>
+        <input type="text" id="inputModalInput" class="modal-input" placeholder="">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="inputModalCancel">Annuler</button>
+      <button class="btn btn-accent" id="inputModalOk">Valider</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module" src="js/main.js"></script>

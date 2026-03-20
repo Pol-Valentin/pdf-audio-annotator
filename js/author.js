@@ -1,39 +1,43 @@
-// Author management: prompt, localStorage, header display, edit
+// Author management: modal prompt, localStorage, header display, edit
 import { state, getAuthor, setAuthor } from './state.js';
 import { EventBus } from './event-bus.js';
+import { showInputModal } from './input-modal.js';
 
 const authorDisplay = document.getElementById('authorDisplay');
 const authorName = document.getElementById('authorName');
 
-export function promptAuthor() {
+export async function promptAuthor() {
   const current = getAuthor();
-  const name = prompt('Ton nom ?', current);
+  const name = await showInputModal({
+    title: 'Qui es-tu ?',
+    label: 'Ton nom',
+    placeholder: 'Ex: Marie, Pol...',
+    value: current,
+  });
   if (name !== null && name.trim()) {
     setAuthor(name.trim());
   }
   return getAuthor();
 }
 
-export function ensureAuthor() {
+export async function ensureAuthor() {
   if (!getAuthor()) {
-    promptAuthor();
+    await promptAuthor();
   }
   return getAuthor();
 }
 
 export function initAuthor() {
-  // Show/hide author display based on annotate mode
-  EventBus.on('annotateMode:changed', (active) => {
+  EventBus.on('annotateMode:changed', async (active) => {
     authorDisplay.style.display = active ? 'flex' : 'none';
     if (active && !getAuthor()) {
-      promptAuthor();
+      await promptAuthor();
     }
     updateAuthorDisplay();
   });
 
   EventBus.on('author:changed', updateAuthorDisplay);
 
-  // Click on author name to edit
   authorDisplay.addEventListener('click', () => {
     promptAuthor();
   });
