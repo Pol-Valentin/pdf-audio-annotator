@@ -10,32 +10,43 @@ const countBadge = document.getElementById('countBadge');
 const downloadBtn = document.getElementById('downloadBtn');
 const downloadBtn2 = document.getElementById('downloadBtn2');
 
+// Modal elements
+const modal = document.getElementById('bulkEditModal');
+const modalSelect = document.getElementById('bulkEditSelect');
+const modalNewName = document.getElementById('bulkEditNewName');
+const modalPreview = document.getElementById('bulkEditPreview');
+
 export function initSidebar() {
   EventBus.on('annotations:changed', refreshUI);
+  initBulkEditModal();
+}
 
-  document.getElementById('bulkEditAuthor').addEventListener('click', () => {
-    if (!state.annotations.length) return;
+function initBulkEditModal() {
+  const openBtn = document.getElementById('bulkEditAuthor');
+  const closeBtn = document.getElementById('bulkEditClose');
+  const cancelBtn = document.getElementById('bulkEditCancel');
+  const applyBtn = document.getElementById('bulkEditApply');
 
-    // Collect unique authors
-    const authors = [...new Set(state.annotations.map(a => a.author || 'Anonyme'))];
-    const currentFilter = authors.length === 1 ? authors[0] : '';
+  openBtn.addEventListener('click', openBulkEdit);
+  closeBtn.addEventListener('click', closeBulkEdit);
+  cancelBtn.addEventListener('click', closeBulkEdit);
+  modal.addEventListener('click', e => { if (e.target === modal) closeBulkEdit(); });
 
-    const oldName = prompt(
-      `Quel auteur remplacer ?\n(Auteurs actuels : ${authors.join(', ')}\nLaisser vide pour tout modifier)`,
-      currentFilter
-    );
-    if (oldName === null) return;
+  // Live preview
+  modalSelect.addEventListener('change', updatePreview);
+  modalNewName.addEventListener('input', updatePreview);
 
-    const newName = prompt('Nouveau nom :', oldName || '');
-    if (newName === null || !newName.trim()) return;
+  applyBtn.addEventListener('click', () => {
+    const selected = modalSelect.value;
+    const newName = modalNewName.value.trim();
+    if (!newName) return;
 
     let count = 0;
     state.annotations.forEach(a => {
-      const match = oldName === ''
-        || (a.author || 'Anonyme') === oldName
-        || (a.author || '') === oldName;
+      const authorKey = a.author || '';
+      const match = selected === '__all__' || authorKey === selected;
       if (match) {
-        a.author = newName.trim();
+        a.author = newName;
         if (a.type === 'imported') a.moved = true;
         count++;
       }
@@ -44,9 +55,63 @@ export function initSidebar() {
     if (count > 0) {
       state.hasMovedAnnotations = true;
       EventBus.emit('annotations:changed');
-      EventBus.emit('toast', `${count} annotation(s) modifiee(s)`);
+      EventBus.emit('toast', `${count} annotation(s) modifiée(s)`);
     }
+    closeBulkEdit();
   });
+}
+
+function openBulkEdit() {
+  if (!state.annotations.length) return;
+
+  // Populate select with unique authors
+  const authorCounts = {};
+  state.annotations.forEach(a => {
+    const key = a.author || '';
+    authorCounts[key] = (authorCounts[key] || 0) + 1;
+  });
+
+  modalSelect.innerHTML = '';
+
+  // "All" option
+  const allOpt = document.createElement('option');
+  allOpt.value = '__all__';
+  allOpt.textContent = `Tous (${state.annotations.length} annotations)`;
+  modalSelect.appendChild(allOpt);
+
+  // Per-author options
+  Object.entries(authorCounts)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([author, count]) => {
+      const opt = document.createElement('option');
+      opt.value = author;
+      opt.textContent = `${author || 'Anonyme'} (${count})`;
+      modalSelect.appendChild(opt);
+    });
+
+  modalNewName.value = '';
+  updatePreview();
+  modal.classList.add('visible');
+  modalNewName.focus();
+}
+
+function closeBulkEdit() {
+  modal.classList.remove('visible');
+}
+
+function updatePreview() {
+  const selected = modalSelect.value;
+  const newName = modalNewName.value.trim();
+  const count = selected === '__all__'
+    ? state.annotations.length
+    : state.annotations.filter(a => (a.author || '') === selected).length;
+
+  if (!newName) {
+    modalPreview.textContent = `${count} annotation(s) seront modifiée(s)`;
+  } else {
+    const oldLabel = selected === '__all__' ? 'tous les auteurs' : (selected || 'Anonyme');
+    modalPreview.textContent = `${oldLabel} → ${newName} (${count} annotation(s))`;
+  }
 }
 
 function refreshUI() {
@@ -106,16 +171,32 @@ function makeItem(a, isReply) {
     <button class="del-btn" title="Supprimer">✕</button>
   `;
 
-  // Edit author on click
-  el.querySelector('.author-tag').addEventListener('click', e => {
+  // Inline edit author on click
+  const authorTag = el.querySelector('.author-tag');
+  authorTag.addEventListener('click', e => {
     e.stopPropagation();
-    const newName = prompt('Nom de l\'auteur :', a.author || '');
-    if (newName !== null) {
-      a.author = newName.trim();
-      if (a.type === 'imported') a.moved = true; // flag as modified for re-export
+    const tag = e.currentTarget;
+    const input = document.createElement('input');
+    input.type = 'text';
+    input.className = 'author-inline-edit';
+    input.value = a.author || '';
+    input.placeholder = 'Nom...';
+    tag.replaceWith(input);
+    input.focus();
+    input.select();
+
+    const commit = () => {
+      const val = input.value.trim();
+      a.author = val;
+      if (a.type === 'imported') a.moved = true;
       state.hasMovedAnnotations = true;
       EventBus.emit('annotations:changed');
-    }
+    };
+    input.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter') { ev.preventDefault(); commit(); }
+      if (ev.key === 'Escape') { EventBus.emit('annotations:changed'); }
+    });
+    input.addEventListener('blur', commit);
   });
 
   el.querySelector('.info').addEventListener('click', () => {

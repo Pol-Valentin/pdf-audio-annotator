@@ -133,6 +133,31 @@
   </div>
 </div>
 
+<!-- Bulk edit modal -->
+<div class="modal-overlay" id="bulkEditModal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title">Modifier les auteurs</span>
+      <button class="modal-close" id="bulkEditClose">&times;</button>
+    </div>
+    <div class="modal-body">
+      <div class="modal-field">
+        <label class="modal-label">Remplacer l'auteur</label>
+        <select id="bulkEditSelect" class="modal-select"></select>
+      </div>
+      <div class="modal-field">
+        <label class="modal-label">Nouveau nom</label>
+        <input type="text" id="bulkEditNewName" class="modal-input" placeholder="Nouveau nom...">
+      </div>
+      <div class="modal-preview" id="bulkEditPreview"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn" id="bulkEditCancel">Annuler</button>
+      <button class="btn btn-accent" id="bulkEditApply">Appliquer</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script type="module" src="js/main.js"></script>
