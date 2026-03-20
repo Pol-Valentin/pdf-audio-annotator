@@ -12,6 +12,41 @@ const downloadBtn2 = document.getElementById('downloadBtn2');
 
 export function initSidebar() {
   EventBus.on('annotations:changed', refreshUI);
+
+  document.getElementById('bulkEditAuthor').addEventListener('click', () => {
+    if (!state.annotations.length) return;
+
+    // Collect unique authors
+    const authors = [...new Set(state.annotations.map(a => a.author || 'Anonyme'))];
+    const currentFilter = authors.length === 1 ? authors[0] : '';
+
+    const oldName = prompt(
+      `Quel auteur remplacer ?\n(Auteurs actuels : ${authors.join(', ')}\nLaisser vide pour tout modifier)`,
+      currentFilter
+    );
+    if (oldName === null) return;
+
+    const newName = prompt('Nouveau nom :', oldName || '');
+    if (newName === null || !newName.trim()) return;
+
+    let count = 0;
+    state.annotations.forEach(a => {
+      const match = oldName === ''
+        || (a.author || 'Anonyme') === oldName
+        || (a.author || '') === oldName;
+      if (match) {
+        a.author = newName.trim();
+        if (a.type === 'imported') a.moved = true;
+        count++;
+      }
+    });
+
+    if (count > 0) {
+      state.hasMovedAnnotations = true;
+      EventBus.emit('annotations:changed');
+      EventBus.emit('toast', `${count} annotation(s) modifiee(s)`);
+    }
+  });
 }
 
 function refreshUI() {
