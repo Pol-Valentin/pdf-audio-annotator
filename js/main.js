@@ -218,6 +218,7 @@ window.addEventListener('beforeunload', e => {
   });
 
   sidebarOverlay.addEventListener('click', closeSidebar);
+  document.getElementById('sidebarClose').addEventListener('click', closeSidebar);
 
   // Show/hide toggle button based on viewport
   function updateToggleVisibility() {
