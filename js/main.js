@@ -24,10 +24,6 @@ const pageCountEl = document.getElementById('pageCount');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const toggleAnnotateBtn = document.getElementById('toggleAnnotate');
-const zoomInBtn = document.getElementById('zoomIn');
-const zoomOutBtn = document.getElementById('zoomOut');
-const zoomFitBtn = document.getElementById('zoomFit');
-const zoomLevelEl = document.getElementById('zoomLevel');
 const toastEl = document.getElementById('toast');
 const infoBar = document.getElementById('infoBar');
 const loadingMsg = document.getElementById('loadingMsg');
@@ -79,7 +75,6 @@ EventBus.on('pdf:loaded', async () => {
   if (window.innerWidth <= 1024) {
     await fitToWidth();
   } else {
-    updateZoomLevel();
     renderPage(state.currentPage);
   }
   updatePageNav();
@@ -119,16 +114,15 @@ EventBus.on('page:changed', () => {
 });
 
 // ── Zoom ──
-const ZOOM_STEP = 0.25;
-const ZOOM_MIN = 0.5;
-const ZOOM_MAX = 4;
+const ZOOM_MIN = 0.25;
+const ZOOM_MAX = 5;
 
 function getFitScale() {
   if (!state.pdfJsDoc) return 1.5;
   const page = state.pdfJsDoc.getPage(state.currentPage);
   return page.then(p => {
     const vp = p.getViewport({ scale: 1 });
-    const viewerWidth = viewer.clientWidth - 16; // small margin
+    const viewerWidth = viewer.clientWidth - 16;
     return viewerWidth / vp.width;
   });
 }
@@ -136,32 +130,8 @@ function getFitScale() {
 async function fitToWidth() {
   const fitScale = await getFitScale();
   state.scale = Math.min(Math.max(fitScale, ZOOM_MIN), ZOOM_MAX);
-  updateZoomLevel();
   renderPage(state.currentPage);
 }
-
-function updateZoomLevel() {
-  const pct = Math.round(state.scale * 100);
-  zoomLevelEl.textContent = pct + '%';
-}
-
-zoomInBtn.addEventListener('click', () => {
-  if (state.scale < ZOOM_MAX) {
-    state.scale = Math.min(state.scale + ZOOM_STEP, ZOOM_MAX);
-    updateZoomLevel();
-    renderPage(state.currentPage);
-  }
-});
-
-zoomOutBtn.addEventListener('click', () => {
-  if (state.scale > ZOOM_MIN) {
-    state.scale = Math.max(state.scale - ZOOM_STEP, ZOOM_MIN);
-    updateZoomLevel();
-    renderPage(state.currentPage);
-  }
-});
-
-zoomFitBtn.addEventListener('click', fitToWidth);
 
 // Pinch-to-zoom on touch devices
 {
@@ -188,7 +158,6 @@ zoomFitBtn.addEventListener('click', fitToWidth);
       const dist = getDistance(e.touches);
       const ratio = dist / initialDistance;
       state.scale = Math.min(Math.max(initialScale * ratio, ZOOM_MIN), ZOOM_MAX);
-      updateZoomLevel();
     }
   }, { passive: false });
 
