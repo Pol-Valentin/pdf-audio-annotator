@@ -138,6 +138,8 @@ async function fitToWidth() {
   let initialDistance = 0;
   let initialScale = 1;
   let isPinching = false;
+  let pinchMidX = 0;
+  let pinchMidY = 0;
 
   function getDistance(touches) {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -145,12 +147,24 @@ async function fitToWidth() {
     return Math.sqrt(dx * dx + dy * dy);
   }
 
+  function getMidpoint(touches) {
+    return {
+      x: (touches[0].clientX + touches[1].clientX) / 2,
+      y: (touches[0].clientY + touches[1].clientY) / 2,
+    };
+  }
+
+  const viewerEl = canvasWrapper.closest('.viewer');
+
   canvasWrapper.addEventListener('touchstart', e => {
     if (e.touches.length === 2) {
       e.preventDefault();
       initialDistance = getDistance(e.touches);
       initialScale = state.scale;
       isPinching = true;
+      const mid = getMidpoint(e.touches);
+      pinchMidX = mid.x;
+      pinchMidY = mid.y;
     }
   }, { passive: false });
 
@@ -160,20 +174,39 @@ async function fitToWidth() {
       const dist = getDistance(e.touches);
       const ratio = dist / initialDistance;
       const newScale = Math.min(Math.max(initialScale * ratio, ZOOM_MIN), ZOOM_MAX);
-      // Apply visual zoom instantly via CSS transform (fluid)
       const cssRatio = newScale / initialScale;
+      // Set transform-origin to pinch midpoint relative to the wrapper
+      const wrapperRect = canvasWrapper.getBoundingClientRect();
+      const ox = ((pinchMidX - wrapperRect.left) / wrapperRect.width * 100);
+      const oy = ((pinchMidY - wrapperRect.top) / wrapperRect.height * 100);
+      canvasWrapper.style.transformOrigin = `${ox}% ${oy}%`;
       canvasWrapper.style.transform = `scale(${cssRatio})`;
       state.scale = newScale;
     }
   }, { passive: false });
 
-  canvasWrapper.addEventListener('touchend', e => {
+  canvasWrapper.addEventListener('touchend', async e => {
     if (isPinching && e.touches.length < 2) {
       isPinching = false;
       initialDistance = 0;
-      // Reset CSS transform and re-render at actual resolution
-      canvasWrapper.style.transform = '';
-      renderPage(state.currentPage);
+
+      const scaleRatio = state.scale / initialScale;
+      const viewerRect = viewerEl.getBoundingClientRect();
+      // Where the pinch midpoint sits in the pre-zoom content
+      const contentX = viewerEl.scrollLeft + (pinchMidX - viewerRect.left);
+      const contentY = viewerEl.scrollTop + (pinchMidY - viewerRect.top);
+
+      // Keep the CSS transform visible while re-rendering underneath
+      await renderPage(state.currentPage);
+
+      // Canvas now has its final size — remove transform, fix scroll & markers in one frame
+      requestAnimationFrame(() => {
+        canvasWrapper.style.transform = '';
+        canvasWrapper.style.transformOrigin = '';
+        viewerEl.scrollLeft = contentX * scaleRatio - (pinchMidX - viewerRect.left);
+        viewerEl.scrollTop = contentY * scaleRatio - (pinchMidY - viewerRect.top);
+        updateMarkers();
+      });
     }
   });
 }
