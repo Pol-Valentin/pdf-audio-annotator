@@ -174,7 +174,7 @@ header {
 main { flex: 1; display: flex; overflow: hidden; }
 
 .viewer {
-  flex: 1; display: flex; align-items: flex-start; justify-content: center;
+  flex: 1; display: flex; align-items: flex-start;
   overflow: auto; padding: 32px; position: relative;
   background:
     radial-gradient(ellipse at 15% 25%, rgba(240,97,62,.04) 0%, transparent 60%),
@@ -185,6 +185,8 @@ main { flex: 1; display: flex; overflow: hidden; }
   position: relative;
   box-shadow: 0 8px 40px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.03);
   border-radius: 6px; overflow: visible; line-height: 0; flex-shrink: 0;
+  margin: 0 auto;
+  transform-origin: top center;
 }
 .canvas-wrapper canvas { display: block; border-radius: 6px; }
 .canvas-wrapper.annotate-mode { cursor: crosshair; }

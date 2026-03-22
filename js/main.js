@@ -133,10 +133,11 @@ async function fitToWidth() {
   renderPage(state.currentPage);
 }
 
-// Pinch-to-zoom on touch devices
+// Pinch-to-zoom on touch devices — fluid via CSS transform
 {
   let initialDistance = 0;
   let initialScale = 1;
+  let isPinching = false;
 
   function getDistance(touches) {
     const dx = touches[0].clientX - touches[1].clientX;
@@ -149,21 +150,29 @@ async function fitToWidth() {
       e.preventDefault();
       initialDistance = getDistance(e.touches);
       initialScale = state.scale;
+      isPinching = true;
     }
   }, { passive: false });
 
   canvasWrapper.addEventListener('touchmove', e => {
-    if (e.touches.length === 2) {
+    if (e.touches.length === 2 && isPinching) {
       e.preventDefault();
       const dist = getDistance(e.touches);
       const ratio = dist / initialDistance;
-      state.scale = Math.min(Math.max(initialScale * ratio, ZOOM_MIN), ZOOM_MAX);
+      const newScale = Math.min(Math.max(initialScale * ratio, ZOOM_MIN), ZOOM_MAX);
+      // Apply visual zoom instantly via CSS transform (fluid)
+      const cssRatio = newScale / initialScale;
+      canvasWrapper.style.transform = `scale(${cssRatio})`;
+      state.scale = newScale;
     }
   }, { passive: false });
 
   canvasWrapper.addEventListener('touchend', e => {
-    if (initialDistance > 0 && e.touches.length < 2) {
+    if (isPinching && e.touches.length < 2) {
+      isPinching = false;
       initialDistance = 0;
+      // Reset CSS transform and re-render at actual resolution
+      canvasWrapper.style.transform = '';
       renderPage(state.currentPage);
     }
   });
