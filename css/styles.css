@@ -170,6 +170,23 @@ header {
 .page-nav button:hover { border-color: var(--text-dim); background: var(--surface-3); }
 .page-nav button:disabled { opacity: .25; cursor: not-allowed; }
 
+/* ── Zoom controls ── */
+.zoom-controls {
+  display: flex; align-items: center; gap: 4px;
+}
+.zoom-controls button {
+  width: 32px; height: 32px;
+  display: flex; align-items: center; justify-content: center;
+  border: 1px solid var(--border); border-radius: 8px;
+  background: var(--surface-2); color: var(--text);
+  cursor: pointer; font-size: 14px; transition: all .2s var(--ease-out);
+}
+.zoom-controls button:hover { border-color: var(--text-dim); background: var(--surface-3); }
+.zoom-level {
+  font-family: var(--font-mono); font-size: 11px; color: var(--text-dim);
+  min-width: 38px; text-align: center; user-select: none;
+}
+
 /* ── Main layout ── */
 main { flex: 1; display: flex; overflow: hidden; }
 
@@ -654,6 +671,8 @@ main { flex: 1; display: flex; overflow: hidden; }
   .author-display .author-name { max-width: 70px; }
   .page-nav { gap: 4px; font-size: 12px; }
   .page-nav button { width: 28px; height: 28px; font-size: 14px; }
+  .zoom-controls button { width: 28px; height: 28px; }
+  .zoom-level { font-size: 10px; min-width: 32px; }
 
   .sidebar-toggle { display: inline-flex !important; }
   .sidebar-close { display: flex; }
@@ -695,6 +714,8 @@ main { flex: 1; display: flex; overflow: hidden; }
   .author-display .edit-icon { display: none; }
   .page-nav button { width: 26px; height: 26px; font-size: 13px; border-radius: 4px; }
   .page-nav { font-size: 11px; }
+  .zoom-controls button { width: 26px; height: 26px; border-radius: 4px; }
+  .zoom-level { font-size: 9px; min-width: 28px; }
   .btn-label-desktop { display: none; }
 
   .viewer { padding: 8px; }

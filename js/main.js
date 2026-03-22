@@ -24,6 +24,10 @@ const pageCountEl = document.getElementById('pageCount');
 const prevPageBtn = document.getElementById('prevPage');
 const nextPageBtn = document.getElementById('nextPage');
 const toggleAnnotateBtn = document.getElementById('toggleAnnotate');
+const zoomInBtn = document.getElementById('zoomIn');
+const zoomOutBtn = document.getElementById('zoomOut');
+const zoomFitBtn = document.getElementById('zoomFit');
+const zoomLevelEl = document.getElementById('zoomLevel');
 const toastEl = document.getElementById('toast');
 const infoBar = document.getElementById('infoBar');
 const loadingMsg = document.getElementById('loadingMsg');
@@ -65,13 +69,19 @@ async function handleLoadPDF(file) {
 }
 
 // ── PDF loaded ──
-EventBus.on('pdf:loaded', () => {
+EventBus.on('pdf:loaded', async () => {
   dropzone.style.display = 'none';
   viewer.style.display = 'flex';
   sidebar.style.display = 'flex';
   headerControls.style.display = 'flex';
   pageCountEl.textContent = state.totalPages;
-  renderPage(state.currentPage);
+  // Auto-fit to width on mobile, or if PDF would overflow
+  if (window.innerWidth <= 1024) {
+    await fitToWidth();
+  } else {
+    updateZoomLevel();
+    renderPage(state.currentPage);
+  }
   updatePageNav();
 });
 
@@ -107,6 +117,88 @@ EventBus.on('page:changed', () => {
   renderPage(state.currentPage);
   updatePageNav();
 });
+
+// ── Zoom ──
+const ZOOM_STEP = 0.25;
+const ZOOM_MIN = 0.5;
+const ZOOM_MAX = 4;
+
+function getFitScale() {
+  if (!state.pdfJsDoc) return 1.5;
+  const page = state.pdfJsDoc.getPage(state.currentPage);
+  return page.then(p => {
+    const vp = p.getViewport({ scale: 1 });
+    const viewerWidth = viewer.clientWidth - 16; // small margin
+    return viewerWidth / vp.width;
+  });
+}
+
+async function fitToWidth() {
+  const fitScale = await getFitScale();
+  state.scale = Math.min(Math.max(fitScale, ZOOM_MIN), ZOOM_MAX);
+  updateZoomLevel();
+  renderPage(state.currentPage);
+}
+
+function updateZoomLevel() {
+  const pct = Math.round(state.scale * 100);
+  zoomLevelEl.textContent = pct + '%';
+}
+
+zoomInBtn.addEventListener('click', () => {
+  if (state.scale < ZOOM_MAX) {
+    state.scale = Math.min(state.scale + ZOOM_STEP, ZOOM_MAX);
+    updateZoomLevel();
+    renderPage(state.currentPage);
+  }
+});
+
+zoomOutBtn.addEventListener('click', () => {
+  if (state.scale > ZOOM_MIN) {
+    state.scale = Math.max(state.scale - ZOOM_STEP, ZOOM_MIN);
+    updateZoomLevel();
+    renderPage(state.currentPage);
+  }
+});
+
+zoomFitBtn.addEventListener('click', fitToWidth);
+
+// Pinch-to-zoom on touch devices
+{
+  let initialDistance = 0;
+  let initialScale = 1;
+
+  function getDistance(touches) {
+    const dx = touches[0].clientX - touches[1].clientX;
+    const dy = touches[0].clientY - touches[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy);
+  }
+
+  canvasWrapper.addEventListener('touchstart', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      initialDistance = getDistance(e.touches);
+      initialScale = state.scale;
+    }
+  }, { passive: false });
+
+  canvasWrapper.addEventListener('touchmove', e => {
+    if (e.touches.length === 2) {
+      e.preventDefault();
+      const dist = getDistance(e.touches);
+      const ratio = dist / initialDistance;
+      state.scale = Math.min(Math.max(initialScale * ratio, ZOOM_MIN), ZOOM_MAX);
+      updateZoomLevel();
+    }
+  }, { passive: false });
+
+  canvasWrapper.addEventListener('touchend', e => {
+    if (initialDistance > 0 && e.touches.length < 2) {
+      initialDistance = 0;
+      renderPage(state.currentPage);
+    }
+  });
+}
 
 // ── Annotate mode ──
 toggleAnnotateBtn.addEventListener('click', () => {
@@ -150,7 +242,18 @@ function showToast(msg) {
 }
 
 // ── Resize ──
-window.addEventListener('resize', () => { if (state.pdfJsDoc) updateMarkers(); });
+{
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    if (!state.pdfJsDoc) return;
+    updateMarkers();
+    // Re-fit on mobile after resize/orientation change
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (window.innerWidth <= 1024) fitToWidth();
+    }, 250);
+  });
+}
 
 // ── Warn before leaving with unsaved changes ──
 function hasUnsavedChanges() {
